@@ -12,6 +12,13 @@ This is a pytorch implementation of SketchRNN, a variational autoencoder based a
 
 # Features
 
+## Architecture
+The model is based on a VAE with a encoder-decoder module. The encoder is a bidirectional RNN while the decoder is an autoregressive unidirectional RNN train on teacher forcing. The encoder output a latent space that represent the overall structure of the input sketch while the decoder output parameters to a multivariant GMM. Sampling from the GMM give us the pen movement (dx and dy) and one hot pen state(pen up, pen down and drawing end).
+
+Random cut off of the sketch is used to to train the encoder, which output a latent space z which is then used to condition every timestep of the decoder trained on teacher forcing.
+
+During reconstruction, the mean value of dx and dy is calculated from the GMM while during generation stochastic sampling from the GMM is used to generate new stroke. 
+
 ## loss functions
 There are three type of loss functions being used to train the model:
 - Reconstruction loss
@@ -22,6 +29,13 @@ There are three type of loss functions being used to train the model:
 - This loss function is exclusive for the encoder. It measure how far the output latent drift from standard gaussian N(0,I). Ideally, we want it to drift from N(0, I) but not too far. The idea is that we want to encode information into the latent space so it need to drift from N(0,I) but too far of a drift mean the encoder is just memorizing the input sketch. The general behaviour of the KL loss is that it start increasing in early epoch as the model learned to rely on the latent space then peaked as the decoder get stronger and relied on teacher forcing input, the kl loss would slowly decrease as less information is being encoded in the latent space.
 ***insert equation for KL divergence***
 
+## KL annealing
+In order to ensure the model doesn't cheat by collapsing the latent space the following equation is used to decrease the reward for collapsing the latent during early epoch. This weight graually get bigger as training progress allowing the model to optimize the KL to ensure the encoder doesn't just memorize the input sketch.
+
+## Encoder reparamerization trick
+This is a technique used in a VAE. The encoder output the mean and variance for the latent space, however in order to ensure stochastic sampling we need to introduce randomness into this latent space but doing so would make training unstable. The trick is to separate the deterministic part of training from the stochastic part. By raparameterize the mean and variance with sample from a standard normal as below we ensure that training remain deterministic while stochatic sampling from the posterior is still possible.  
+
+***insert kl annealing equation***
 ## 
 
 # Result
