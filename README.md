@@ -62,6 +62,7 @@ Reconstruction Collapse
 </td>
 </tr>
 </table>
+
 ## Overiftting and Generalization
 Larger model tend to overfit on the training, however, smaller model seem to underfit with low quality sketch output. Therefore, a small variance gaussian noise is applied to the teacher forcing input of the decoder during training so that the model can generalized better to the validation set. A small input dropout was also used on the decoder instead of recurrent drop out which slow down training. 
 ## Task mismatch training between reconstruction and generatiion 
