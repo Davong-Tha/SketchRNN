@@ -64,7 +64,7 @@ Model reconstructed output
 Input Sketch
 </td>
 <td align="center">
-<img src="assetgenout16.png" width="400"/><br>
+<img src="asset/genout16.png" width="400"/><br>
 Different sample generation conditioned on the input sketch
 </td>
 </tr>
