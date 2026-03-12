@@ -43,7 +43,7 @@ The cat dataset on google quickdraw was used to train the model. There are a tot
 ## train and validation loss
 The model was trained on 8:2 train/validation split 
 
-## reconstruction and generation
+## Reconstruction and Generation
 <table>
 <tr>
 <td align="center">
@@ -74,7 +74,6 @@ Different sample generation conditioned on the input sketch
 ## Posterior Collapse
 During training, the decoder used both the latent space provided by the encoder and the previous stroke provided by teacher forcing. However, this introduce a fundamental failure mode into the design since the decoder can cheat by collapsing the latent space to zero thereby minimizing the loss in earlier epoch. This can be diagnosed by the KL loss flooring at early epoch and the generated drawing are all the same regardless of the input to the encoder. The decoder essentially ignore the latent space which contain global structure information and rely solely on teacherforcing to optimized the loss. This can be prevented by KL annealing which decrease the reward for minimizing the KL loss in early epoch. Later on when reconstrcution quality improve, collpasing the latent space become costly since the model already learned to rely on it.
 
-***Insert graph and generated sketch of posterior collapse***
 <table>
 <tr>
 <td align="center">
