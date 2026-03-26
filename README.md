@@ -16,7 +16,6 @@ This is a pytorch implementation of SketchRNN, a variational autoencoder based a
 # Features
 
 ## Architecture
-## Architecture
 
 - **Model overview**
   - Based on a Variational Autoencoder (VAE) with an encoder–decoder structure  
