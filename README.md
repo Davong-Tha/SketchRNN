@@ -53,7 +53,8 @@ There are two type of loss functions being used to train the model:
   - Applied only to the encoder  
   - Measures deviation of latent distribution from $\mathcal{N}(0, I)$  
   - Small deviation → weak encoding; large deviation → risk of memorization  
-  - Training behavior: increases early, peaks, then gradually decreases as decoder relies more on teacher forcing  
+  - Training behavior: increases early, peaks, then gradually decreases as decoder relies more on teacher forcing
+  - the equation for the KL loss is given below:
 $$
 D_{KL}\big(q(z|x)\,\|\,\mathcal{N}(0, I)\big) = -\frac{1}{2} \sum \left(1 + \log \sigma^2 - \mu^2 - \sigma^2 \right)
 $$
