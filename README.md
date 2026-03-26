@@ -11,6 +11,7 @@ This is a pytorch implementation of SketchRNN, a variational autoencoder based a
 - encoder.py: the encoder module of the model
 - decoder.py: the decoder module of the model
 - customlstm.py: an implementation of lstm with recurrent dropout
+- Sketchrnn.ipynb: a notebook used to train the model
 
 # Features
 
