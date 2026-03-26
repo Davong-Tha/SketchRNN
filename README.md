@@ -7,41 +7,75 @@ This is a pytorch implementation of SketchRNN, a variational autoencoder based a
 - [Lesson Learnt and Troubleshooting](#lesson-learnt-and-troubleshooting)
 - [Limitation](#limitation)
 # Repo Content
+- SketchRNN.py: the main model class with train step and inference function
+- encoder.py: the encoder module of the model
+- decoder.py: the decoder module of the model
+- customlstm.py: an implementation of lstm with recurrent dropout
 
 # Features
 
 ## Architecture
-The model is based on a VAE with a encoder-decoder module. The encoder is a bidirectional RNN while the decoder is an autoregressive unidirectional RNN train on teacher forcing. The encoder output a latent space that represent the overall structure of the input sketch while the decoder output parameters to a multivariant GMM. Sampling from the GMM give us the pen movement (dx and dy) and one hot pen state(pen up, pen down and drawing end).
+## Architecture
 
-Random cut off of the sketch is used to to train the encoder, which output a latent space z which is then used to condition every timestep of the decoder trained on teacher forcing.
+- **Model overview**
+  - Based on a Variational Autoencoder (VAE) with an encoder–decoder structure  
+  - Encoder: bidirectional RNN  
+  - Decoder: autoregressive unidirectional RNN trained with teacher forcing  
 
-During reconstruction, the mean value of dx and dy is calculated from the GMM while during generation stochastic sampling from the GMM is used to generate new stroke. 
+- **Latent representation**
+  - Encoder outputs a latent vector representing the overall structure of the input sketch  
+
+- **Decoder output**
+  - Outputs parameters of a multivariate GMM  
+  - GMM models pen movement $(dx, dy)$  
+  - Sampling from GMM produces stroke offsets  
+  - Also outputs one-hot pen states (pen up, pen down, end of drawing)  
+
+- **Training strategy**
+  - Randomly truncated sketches are used as input to the encoder  
+  - Encoder produces latent vector $z$  
+  - Latent vector $z$ conditions every timestep of the decoder  
+  - Decoder is trained using teacher forcing  
+
+- **Reconstruction vs generation**
+  - Reconstruction: use mean of GMM for $(dx, dy)$  
+  - Generation: use stochastic sampling from GMM to generate new strokes  
 
 ## loss functions
-There are three type of loss functions being used to train the model:
-- Reconstruction loss
-- pen state: this is a one hot label so a simple cross entrophy loss was used.
-- pen movement (dx and dy): the horizontal and vertical movement of the stroke is model by multivariant GMM. To optimize this function its negative log likelihood was derived
-- The penstate and pen movement represent reconstruction loss which tell us how similar the generated sketch is to our training data.
-- KL loss
-- This loss function is exclusive for the encoder. It measure how far the output latent drift from standard gaussian N(0,I). Ideally, we want it to drift from N(0, I) but not too far. The idea is that we want to encode information into the latent space so it need to drift from N(0,I) but too far of a drift mean the encoder is just memorizing the input sketch. The general behaviour of the KL loss is that it start increasing in early epoch as the model learned to rely on the latent space then peaked as the decoder get stronger and relied on teacher forcing input, the kl loss would slowly decrease as less information is being encoded in the latent space.
-***insert equation for KL divergence***
+There are two type of loss functions being used to train the model:
+- **Reconstruction loss**
+  - Pen state: modeled as a one-hot vector → optimized using cross-entropy loss  
+  - Pen movement $(dx, dy)$: modeled with a multivariate GMM → optimized via negative log-likelihood  
+  - Measures how closely the generated sketch matches the training data  
+
+- **KL divergence loss**
+  - Applied only to the encoder  
+  - Measures deviation of latent distribution from $\mathcal{N}(0, I)$  
+  - Small deviation → weak encoding; large deviation → risk of memorization  
+  - Training behavior: increases early, peaks, then gradually decreases as decoder relies more on teacher forcing  
+$$
+D_{KL}\big(q(z|x)\,\|\,\mathcal{N}(0, I)\big) = -\frac{1}{2} \sum \left(1 + \log \sigma^2 - \mu^2 - \sigma^2 \right)
+$$
 
 ## KL annealing
-In order to ensure the model doesn't cheat by collapsing the latent space the following equation is used to decrease the reward for collapsing the latent during early epoch. This weight graually get bigger as training progress allowing the model to optimize the KL to ensure the encoder doesn't just memorize the input sketch.
-***insert kl annealing equation***
+In order to ensure the model doesn't cheat by collapsing the latent space the following equation is used to decrease the reward for collapsing the latent during early epoch.
+
+$\eta_{\text{step}} = 1 - (1 - \eta_{\min}){R^{\text{step}}}$
+
+$Loss_{\text{train}} = L_F + w_{KL}\,\eta_{\text{step}} \max(L_{KL}, L_{\min})$
+
+This weight graually get bigger as training progress allowing the model to optimize the KL to ensure the encoder doesn't just memorize the input sketch.
+
 ## Encoder reparamerization trick
 This is a technique used in a VAE. The encoder output the mean and variance for the latent space, however in order to ensure stochastic sampling we need to introduce randomness into this latent space but doing so would make training unstable. The trick is to separate the deterministic part of training from the stochastic part. By raparameterize the mean and variance with sample from a standard normal as below we ensure that training remain deterministic while stochatic sampling from the posterior is still possible.  
 
 
-## 
-
 # Result
 ## Dataset 
-The cat dataset on google quickdraw was used to train the model. There are a total of ~120,000 sample was used. the quickdraw format was converted to sketchrnn format, and the pen movement (dx and dy) was normalized their joint standard deviation. Any sketch that are too long or too short are drop by considering them as outlier using IQR percentile. 
+The cat dataset on google quickdraw was used to train the model with approximately ~120,000 samples. The quickdraw format was converted to sketchrnn format, and the pen movement (dx and dy) was normalized by their joint standard deviation. Any sketch that are too long or too short are drop by considering them as outlier using IQR percentile. 
 
 ## train and validation loss
-The model was trained on 8:2 train/validation split 
+The model was trained on 8:2 train/validation split for 300 epoch. The Reconstruction Loss and KL loss can be seen below. 
 <table>
 <tr>
 <td align="center">
@@ -105,5 +139,3 @@ Larger model tend to overfit on the training, however, smaller model seem to und
 Initially, the encoder was trained on the entire sketch and the decoder receive teacher forcing input from the entire sketch as well. This allow us to achieve good reconstruction, however generation condition on an incomplete sketch abruptly end after the timestep the decoder was condition on. i.e if n timestep (incomplete sketch) was pass to the encoder, the decoder stop generation after n timestep. In order to resolve this random cutoff of the sketch was used to train the encoder instead while the decoder still receive teacher forcing on the whole sketch. This teach the model that the sketch doesn't end even after the timestep it was conditioned on. 
 ## Custom LSTM 
 During earlier trails of the experiment, a custom lstm cell was also being since it can give full control over the hidden satte thereby allowing us to applied recurrent dropout. The idea is that we corrupt the hidden state of the decoder forcing the model to rely more the latent space, however, this greatly reduce the training speed and therefore keras lstm was used instead. 
-
-# Limitation
