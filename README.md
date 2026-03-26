@@ -42,6 +42,18 @@ The cat dataset on google quickdraw was used to train the model. There are a tot
 
 ## train and validation loss
 The model was trained on 8:2 train/validation split 
+<table>
+<tr>
+<td align="center">
+<img src="asset/reconLoss.png" width="400"/><br>
+Reconstruction Loss
+</td>
+<td align="center">
+<img src="asset/kl_loss.png" width="400"/><br>
+KL Loss
+</td>
+</tr>
+</table>
 
 ## Reconstruction and Generation
 <table>
